@@ -1,0 +1,60 @@
+1. MVC
+1.1. Program.cs
+- builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options => {
+    options.IdleTimeout = TimeSpan.FromMinutes(120);
+});
+
+- app.UseSession();
+
+1.2. Controller
+- using Microsoft.AspNetCore.Http;
+- private readonly IHttpContextAccessor contxt;
+- public HomeController(ILogger<HomeController> logger, IHttpContextAccessor httpContextAccessor)
+{
+    _logger = logger;
+
+    contxt = httpContextAccessor;
+}
+
+- set session
+contxt.HttpContext.Session.SetString("customer_cd","1");
+contxt.HttpContext.Session.SetString("customer_nm", "CUS001");
+
+- get session
+ontxt.HttpContext.Session.GetString("customer_cd");
+
+- get session in view cshtml
+@inject IHttpContextAccessor contxt;
+<h1> Customer Id : @contxt.HttpContext.Session.GetString("customer_cd")</h1>
+<h1> Customer Id : @contxt.HttpContext.Session.GetString("customer_nm")</h1>
+
+
+
+2. ASP .NET core
+- 2.1. Startup.cs
+ConfigureServices function
+services.AddSession(o => {
+   o.IdleTimeout = TimSpan.FromSeconds(1800);
+});
+
+Configure function
+them sau UseAu
+app.UseSession();
+
+- 2.2. Controller
+var user = HtpContext.Session.SetString("customer_nm", "CUS001");
+HttpContext.Session.SetString("KeyName", "Hello, World!");
+
+
+----------------------  Command
+public MyDbContext(DbContextOptions<MyDbContext> options) : base(options) 
+{
+}
+
+public DbSet<Customer> Customers { get; set; }
+
+Migration DB
+- Add-Migration InitialMigration -c MyDbContext -o Data/Migrations
+- Update-Database
