@@ -1,0 +1,27 @@
+﻿@inject IHttpContextAccessor contxt;
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>My View</title>
+</head>
+<body>
+    <h1>This is my view !</h1>
+    <a asp-action="Register">Registers</a>
+
+    @ViewBag.Title
+    <br />
+    @ViewBag.Hello
+
+    <h1> Customer Id : @contxt.HttpContext.Session.GetString("customer_cd")</h1>
+    <h1> Customer Id : @contxt.HttpContext.Session.GetString("customer_nm")</h1>
+
+    <h2>@ViewBag.Message</h2>
+</body>
+</html>
