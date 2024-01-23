@@ -1,0 +1,206 @@
+
+------ checkbox ------------
+<label>
+    <input type="checkbox" id="enableCheckbox"> Enable Input
+</label>
+
+<input type="text" id="textInput" placeholder="Type something..." disabled>
+
+<script>
+    // Lấy tham chiếu đến checkbox và input
+    var enableCheckbox = document.getElementById("enableCheckbox");
+    var textInput = document.getElementById("textInput");
+
+    // Thêm sự kiện "change" cho checkbox
+    enableCheckbox.addEventListener("change", function() {
+        // Nếu checkbox được chọn (checked), kích hoạt input; ngược lại, vô hiệu hóa input
+        textInput.disabled = !enableCheckbox.checked;
+    });
+</script>
+
+
+-------------------------- input date tabulator -----------------
+var table = new Tabulator("#example-table", {
+    columns: [
+        { title: "ID", field: "id" },
+        {
+            title: "Ngày",
+            field: "date",
+            editor: "input",
+            editorParams: { type: "date" },
+            formatter: "datetime", // Định dạng ngày giờ
+            formatterParams: {
+                inputFormat: "YYYY-MM-DD",
+                outputFormat: "YYYY-MM-DD",
+                invalidPlaceholder: "Không hợp lệ",
+            },
+        },
+        // ... Các cột khác ...
+    ],
+    // ... Cài đặt khác của Tabulator ...
+});
+
+
+------------------ hiên thị icon succes dựa vào data
+<script>
+    var tableData = [
+        { id: 1, status: 1 },
+        { id: 2, status: 0 },
+        // ... Thêm dữ liệu khác ...
+    ];
+
+    var table = new Tabulator("#example-table", {
+        data: tableData,
+        layout: "fitColumns",
+        columns: [
+            { title: "ID", field: "id" },
+            {
+                title: "Trạng Thái",
+                field: "status",
+                formatter: function(cell, formatterParams, onRendered) {
+                    // Lấy giá trị của ô
+                    var statusValue = cell.getValue();
+
+                    // Tạo HTML với biểu tượng Bootstrap
+                    var iconHTML = statusValue === 1
+                        ? '<i class="fas fa-check text-success"></i>' // Icon cho trạng thái 1
+                        : '<i class="fas fa-sync-alt text-warning"></i>'; // Icon cho trạng thái 0
+
+                    return iconHTML;
+                },
+            },
+            // ... Các cột khác ...
+        ],
+    });
+</script>
+
+
+
+
+
+----------------------- set disable or enable cho field
+<script>
+    var tableData = [
+        { id: 1, status: 1 },
+        { id: 2, status: 0 },
+        // ... Thêm dữ liệu khác ...
+    ];
+
+    var table = new Tabulator("#example-table", {
+        data: tableData,
+        layout: "fitColumns",
+        columns: [
+            { title: "ID", field: "id" },
+            {
+                title: "Trạng Thái",
+                field: "status",
+                formatter: function(cell, formatterParams, onRendered) {
+                    // Lấy giá trị của ô
+                    var statusValue = cell.getValue();
+
+                    // Tạo HTML với biểu tượng Bootstrap và kiểu style tùy thuộc vào giá trị
+                    var iconHTML = statusValue === 1
+                        ? '<i class="fas fa-check text-success" style="cursor: pointer;"></i>' // Icon cho trạng thái 1
+                        : '<i class="fas fa-sync-alt text-warning" style="cursor: not-allowed;"></i>'; // Icon cho trạng thái 0
+
+                    return iconHTML;
+                },
+            },
+            // ... Các cột khác ...
+        ],
+    });
+</script>
+
+
+
+---------------------- add tooltip cho field
+<script>
+    var tableData = [
+        { id: 1, status: 1 },
+        { id: 2, status: 0 },
+        // ... Thêm dữ liệu khác ...
+    ];
+
+    var table = new Tabulator("#example-table", {
+        data: tableData,
+        layout: "fitColumns",
+        columns: [
+            { title: "ID", field: "id" },
+            {
+                title: "Trạng Thái",
+                field: "status",
+                formatter: function(cell, formatterParams, onRendered) {
+                    // Lấy giá trị của ô
+                    var statusValue = cell.getValue();
+
+                    // Tạo HTML với biểu tượng Bootstrap và kiểu style tùy thuộc vào giá trị
+                    var iconHTML = statusValue === 1
+                        ? '<i class="fas fa-check text-success" data-toggle="tooltip" data-placement="top" title="Icon is enabled"></i>' // Icon cho trạng thái 1
+                        : '<i class="fas fa-sync-alt text-warning" data-toggle="tooltip" data-placement="top" title="Icon is disabled"></i>'; // Icon cho trạng thái 0
+
+                    return iconHTML;
+                },
+            },
+            // ... Các cột khác ...
+        ],
+    });
+
+    // Kích hoạt Bootstrap Tooltip
+    $('[data-toggle="tooltip"]').tooltip();
+</script>
+
+
+
+--------------------------- đổ data từ controller vào tabulator khi chạy hàm index
+
+public class YourController : Controller
+{
+    public IActionResult Index()
+    {
+        // Tạo một đối tượng MPKO0080Model với dữ liệu giả mạo
+        var model = new MPKO0080Model
+        {
+            Info1 = new MPKO0080Model.AInfo
+            {
+                A = "Some Value",
+                BList = new List<MPKO0080Model.BInfo>
+                {
+                    new MPKO0080Model.BInfo { B1 = "Value1", B2 = "Value2" },
+                    new MPKO0080Model.BInfo { B1 = "Value3", B2 = "Value4" },
+                    // ... Thêm dữ liệu khác ...
+                }
+            }
+        };
+
+        return View(model);
+    }
+}
+
+----- 
+<script> 
+    var tableData = @Html.Raw(Json.Serialize(Model.Info1.BList)); // Chuyển đổi dữ liệu từ controller thành dữ liệu JavaScript
+
+    var table = new Tabulator("#example-table", {
+        data: tableData,
+        layout: "fitColumns",
+        columns: [
+            { title: "B1", field: "b1" },
+            { title: "B2", field: "b2" },
+            // ... Thêm các cột khác tùy thuộc vào mô hình của bạn ...
+        ],
+    });
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
