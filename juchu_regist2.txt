@@ -1,0 +1,235 @@
+
+------------- hacchu list query view -------------   DB処理3
+/* 未発行の発注情報取得 */
+DROP VIEW IF EXISTS v_unpublished_hacchu_list
+; 
+
+CREATE VIEW v_unpublished_hacchu_list AS 
+SELECT
+      kotei.kanriNo                                                            
+    , kotei.kanriBrno                                                          
+    , kotei.buhinBrno                                                         
+    , kotei.sagyoNo                                                  
+    , kotei.kojiNo 
+FROM
+    t_sagyokotei kotei                                                            -- 作業工程
+    LEFT JOIN t_zairyohi zairyohi                                                 -- 材料費
+        ON zairyohi.kanriNo = kotei.kanriNo 
+        AND zairyohi.kanriBrno = kotei.kanriBrno
+        AND zairyohi.kanriBrno = kotei.kanriBrno
+        AND zairyohi.buhinBrno = kotei.buhinBrno
+        AND zairyohi.sagyouNo = kotei.sagyouNo
+        AND zairyohi.kojiNo = kotei.kojiNo
+        AND zairyohi.hacchu_flg = '0' 
+        AND zairyohi.delete_flg = '0' 
+    LEFT JOIN t_gaichuhi gaichuhi                                                 -- 外注費
+        ON gaichuhi.kanriNo = kotei.kanriNo 
+        AND gaichuhi.kanriBrno = kotei.kanriBrno
+        AND gaichuhi.kanriBrno = kotei.kanriBrno
+        AND gaichuhi.buhinBrno = kotei.buhinBrno
+        AND gaichuhi.sagyouNo = kotei.sagyouNo
+        AND gaichuhi.kojiNo = kotei.kojiNo
+        AND gaichuhi.hacchu_flg = '0' 
+        AND gaichuhi.delete_flg = '0'
+WHERE
+        kotei.hacchusaki_cd <> null
+    AND kotei.delete_flg = '0'
+;
+
+
+----------- hacchu model -------------------
+public partial class VUnpublishedHacchuList {
+    public string? KanriNo { get; set; }
+
+    public string? KanriBrno { get; set; }
+
+    public string? BuhinBrno { get; set; }
+
+    public string? SagyoNo { get; set; }
+
+    public string? KojiNo { get; set; }
+}
+
+
+
+-------------------- 作業が始まっている情報取得 -------------- DB処理6
+/* 作業が始まっている情報取得 */
+DROP VIEW IF EXISTS v_sagyou_start_list
+; 
+
+CREATE VIEW v_sagyou_start_list AS 
+SELECT
+      kotei.kanriNo                                                            
+    , kotei.kanriBrno                                                          
+    , kotei.buhinBrno                                                         
+    , kotei.sagyoNo                                                  
+    , kotei.kojiNo 
+FROM
+    t_sagyokotei kotei                                                            -- 作業工程
+WHERE
+        kotei.kotei_kanryo_flg <> '0'
+    AND kotei.kojun = 1
+    AND kotei.delete_flg = '0'
+
+
+
+----------- sagyou start model -------------------
+public partial class VSagyoStartList {
+    public string? KanriNo { get; set; }
+
+    public string? KanriBrno { get; set; }
+
+    public string? BuhinBrno { get; set; }
+
+    public string? SagyoNo { get; set; }
+
+
+    public string? KojiNo { get; set; }
+}
+
+
+
+--------------------------  Tao Function ---------
+
+CREATE OR REPLACE FUNCTION GetEntitiesByParameter(
+    parameter_value VARCHAR
+)
+RETURNS TABLE (
+    id INT,
+    your_column VARCHAR
+)
+AS $$
+BEGIN
+    RETURN QUERY SELECT id, your_column FROM your_table WHERE your_column = parameter_value;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+--------------- 
+public class YourDbContext : DbContext
+{
+    public YourDbContext(DbContextOptions<YourDbContext> options)
+        : base(options)
+    {
+    }
+
+    // ...
+
+    public async Task<IEnumerable<YourEntity>> GetEntitiesByParameterAsync(string parameterValue)
+    {
+        // Sử dụng FromSqlRaw để gọi stored procedure
+        return await YourEntities
+            .FromSqlRaw("SELECT * FROM GetEntitiesByParameter({0})", parameterValue)
+            .ToListAsync();
+    }
+}
+
+-- callllll
+string parameterValue = "YourValue";
+
+        // Gọi hàm để thực hiện truy vấn
+        var result = await dbContext.GetEntitiesByParameterAsync(parameterValue);
+
+
+
+
+
+----------------------- 受注明細情報取得 ------------------------------
+SELECT	t_juchumeisai.kanriBrno													
+	,t_juchuseihin.buhinBrNo													
+	,t_juchumeisai.chumonNo													
+	,t_juchumeisai.order												
+	,t_juchumeisai.zuban													
+	,t_juchumeisai.hinmei												
+	,t_juchumeisai.isshikimei												
+	,t_juchumeisai.isshiki_flg		
+	,t_juchumeisai.suryo									
+	,t_juchumeisai.tanka									
+	,t_juchumeisai.hontaikakaku	
+	,t_juchumeisai.zuban_file_nm
+	,t_juchumeisai.seihin_noki		
+	,t_juchumeisai.seihin_nohinbi
+	,( 																				
+		SELECT COUNT(t_sagyokotei.sagyoNo)																
+			FROM t_juchuseihin															
+			LEFT JOIN t_sagyokotei															
+			ON t_juchuseihin.kanriNo = t_sagyokotei.kanriNo			
+			AND t_juchuseihin.kanriBrno = t_sagyokotei.kanriBrno	
+			AND	t_juchuseihin.buhinBrNo = t_sagyokotei.buhinBrNo
+			AND	t_sagyokotei.delete_flg = '0'
+			WHERE t_juchuseihin.kanriNo	= 画面.kanriNo		
+			AND	  t_juchuseihin.delete_flg = '0'												
+			) AS sagyou_koteisu															
+FROM t_juchumeisai																			
+LEFT JOIN t_juchuseihin																			
+ON  t_juchuseihin.kanriNo =	t_juchumeisai.kanriNo							
+AND	t_juchuseihin.kanriBrno = t_juchumeisai.kanriBrno							
+WHERE t_juchuseihin.kanriNo	= 画面.kanriNo			
+AND t_juchumeisai.delete_flg = '0'						
+																							
+UNION ALL																							
+																							
+SELECT t_juchuseihin.kanriBrno												
+	,t_juchuseihin.buhinBrno													
+	,t_juchuseihin.chumonNo												
+	,t_juchuseihin.order													
+	,t_juchuseihin.zuban												
+	,t_juchuseihin.hinmei												
+	,t_juchuseihin.isshikimei													
+	,t_juchumeisai.isshiki_flg												
+	,t_juchuseihin.suryo												
+	,t_juchuseihin.tanka												
+	,t_juchuseihin.suryo × tanka as kingaku								
+	,t_juchuseihin.zuban_file_nm												
+	,t_juchuseihin.seihin_noki												
+	,t_juchuseihin.seihin_nohinbi													
+	,( 																				
+	  SELECT COUNT(t_sagyokotei.sagyoNo)																
+	  FROM t_juchuseihin															
+	  LEFT JOIN t_sagyokotei																
+	  ON t_juchuseihin.kanriNo = t_sagyokotei.kanriNo			
+	  AND t_juchuseihin.kanriBrno = t_sagyokotei.kanriBrno	
+	  AND	t_juchuseihin.buhinBrNo = t_sagyokotei.buhinBrNo
+	  AND	t_sagyokotei.delete_flg = '0'		
+	  WHERE t_juchuseihin.kanriNo	= 画面.kanriNo				
+	  AND	t_juchuseihin.delete_flg = '0'						
+		) AS sagyou_koteisu															
+FROM t_juchuseihin																			
+WHERE t_juchuseihin.kanriNo = 画面.kanriNo			
+	AND t_juchuseihin.delete_flg = '0'						
+	AND	t_juchuseihin.isshiki_flg =	'1'					
+																							
+UNION ALL																							
+																							
+SELECT t_ichiji_juchuseihin.kanriBrno													
+	,t_ichiji_juchuseihin.buhinBrNo												
+	,t_ichiji_juchuseihin.chumonNo												
+	,t_ichiji_juchuseihin.order												
+	,t_ichiji_juchuseihin.zuban													
+	,t_ichiji_juchuseihin.hinmei												
+	,t_ichiji_juchuseihin.isshikimei												
+	,t_ichiji_juchuseihin.isshiki_flg												
+	,t_juchumeisai.suryo												
+	,t_juchumeisai.tanka												
+	,t_juchumeisai.hontaikakaku												
+	,t_juchumeisai.zuban_file_nm												
+	,t_juchumeisai.seihin_noki												
+	,t_juchumeisai.seihin_nohinbi												
+	,""																				
+FROM t_ichiji_juchuseihin																			
+LEFT JOIN t_juchumeisai																		
+ON t_juchumeisai.kanriNo = t_ichiji_juchuseihin.kanriNo		
+AND	t_juchumeisai.kanriBrno = t_ichiji_juchuseihin.kanriBrno		
+WHERE t_ichiji_juchuseihin.kanriNo = 画面. kanriNo		
+AND t_ichiji_juchuseihin.delete_flg = '0'					
+																						
+ORDER BY kanriBrno ASC									
+AND	buhinBrNo ASC	
+
+
+
+
+
+
